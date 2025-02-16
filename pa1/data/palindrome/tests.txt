@@ -1,0 +1,16 @@
+racecar
+yes
+hohoho
+no
+Bob
+yes
+Robert
+no
+Madam, I'm Adam.
+yes
+Rise to vote, Sir.
+yes
+A man, a plan, a canal: Panama.
+yes
+Two men, two plans, two canals: Panamas.
+no
