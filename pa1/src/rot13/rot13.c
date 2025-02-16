@@ -11,6 +11,7 @@ int main(int argc, char *argv[]) {
     int i = 0, char_code = 0;
 
     while(msg[i] != '/0') {
+        
         if(!isalpha(msg[i])) {
             char_code = (int)msg[i];
             //uppercase
