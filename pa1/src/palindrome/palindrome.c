@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
 
         if(tolower(msg[start]) != tolower(msg[end])) {
             puts("no");
-            return -1;
+            return 0;
         }
         start++;
         end--;
