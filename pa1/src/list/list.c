@@ -12,25 +12,24 @@ void printlist(struct node **head, int list_len);
 
 int main(int argc, char *argv[]) {
 
-    //scan standard input until session terminates
-    char op;
+    int op_int;
+    char op_char;
     int n, success, list_len = 0;
     struct node *head = NULL;
 
-    success = scanf("%c", &op);
-    if(success != 1) return EXIT_FAILURE;
+    op_int = getchar();
 
-    while(op != EOF) {
-        scanf("%*c");
+    while(op_int != EOF) {
+
+        op_char = (char)op_int;
+        getchar();
         success = scanf("%d", &n);
         if(success != 1) return EXIT_FAILURE;
 
-        //printf("op: %c, num: %d, success: %d\n", op, n, success);
-
-        if(op == 'i') {
+        if(op_char == 'i') {
             insert(&head, n, &list_len);
         }
-        else if(op == 'd') {
+        else if(op_char == 'd') {
             delete(&head, n, &list_len);
         }
         else
@@ -40,9 +39,8 @@ int main(int argc, char *argv[]) {
         printlist(&head, list_len);
 
         //scan newline
-        scanf("%*c");
-        success = scanf("%c", &op);
-        if(success != 1) return 0;
+        getchar();
+        op_int = getchar();
     }
 
 
@@ -50,7 +48,6 @@ int main(int argc, char *argv[]) {
 }
 
 void insert(struct node **head, int n, int* list_len) {
-    //go until first value that is larger
 
     if(*head == NULL) {
         *head = (struct node*)malloc(sizeof(struct node));
@@ -73,10 +70,10 @@ void insert(struct node **head, int n, int* list_len) {
         return;
     }
 
-
     //declare temp ptr
     struct node *ptr = *head;
 
+    //iterate until first val greater than target
     while(ptr->next != NULL && ptr->next->val <= n) {
         if(ptr->next->val == n) {
             return;
@@ -93,8 +90,6 @@ void insert(struct node **head, int n, int* list_len) {
 }
 
 void delete(struct node **head, int n, int* list_len) {
-    //search for n in list
-    //if n exists, set prev to point to next
 
     if(*head == NULL) {
         return;
