@@ -1,7 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(int argc, int *argv[]) {
+int mat_inv(double **mat, int n, double **matinv);
+int is_identity(double **mat, int n);
+void mat_trans(double **mat, int rows, int cols, double **mattrans);
+void mat_mult (double **mat1, int mat1_r, int mat1_c, double **mat2, int mat2_r, int mat2_c, double **matprod);
+
+int main(int argc, char **argv) {
 
     //scan argv[1], train: matrix houses x attributes + 1, matrix prices houses x 1
     FILE *training_file = fopen(argv[1], "r");
@@ -9,10 +14,10 @@ int main(int argc, int *argv[]) {
     if(ret != 1) return EXIT_FAILURE;
 
     //scan num houses (rows) and attributes (cols-1)
-    int rows, cols;
-    ret = fscanf(training_file, "%d", rows);
+    int rows = 0, cols = 0;
+    ret = fscanf(training_file, "%d", &rows);
     if(ret != 1) return EXIT_FAILURE;
-    ret = fscanf(training_file, "%d", cols);
+    ret = fscanf(training_file, "%d", &cols);
     if(ret != 1) return EXIT_FAILURE;
     cols += 1;
 
@@ -55,11 +60,11 @@ int main(int argc, int *argv[]) {
         prices[i] = &prices[0][i];
         
         for(int j = 1; j < (cols-1); j++) {
-            ret = fscanf(training_file, "%lf", houses_mat[i][j]);
+            ret = fscanf(training_file, "%lf", &houses_mat[i][j]);
             if(ret != 1) return EXIT_FAILURE;
         }
 
-        ret = fscanf(training_file, "%lf", prices[i][0]);
+        ret = fscanf(training_file, "%lf", &prices[i][0]);
         if(ret != 1) return EXIT_FAILURE;
     }
 
@@ -77,11 +82,11 @@ int main(int argc, int *argv[]) {
     ret = fscanf(data_file, "%*s");
     if(ret != 1) return EXIT_FAILURE;
 
-    int d_rows, d_cols;
-    ret = fscanf(training_file, "%d", d_cols);
+    int d_rows = 0, d_cols = 0;
+    ret = fscanf(training_file, "%d", &d_cols);
     //num attributes should match in both files
     if(ret != 1 || d_cols != cols) return EXIT_FAILURE;
-    ret = fscanf(training_file, "%d", d_rows);
+    ret = fscanf(training_file, "%d", &d_rows);
     if(ret != 1) return EXIT_FAILURE;
 
     //data matrix (houses) x (attr + 1)
@@ -97,7 +102,7 @@ int main(int argc, int *argv[]) {
         est_prices[i] = &est_prices[0][i];
 
         for(int j = 1; j < cols; j++) {
-            ret = fscanf(data_file, "%lf", data_mat[i][j]);
+            ret = fscanf(data_file, "%lf", &data_mat[i][j]);
             if(ret != 1) return EXIT_FAILURE;
         }
     }
@@ -168,8 +173,9 @@ int mat_inv(double **mat, int n, double **matinv) {
 int is_identity(double **mat, int n) {
     for(int i = 0; i < n; i++) {
         for(int j = 0; j < n; j++) {
-            if(i == j)
+            if(i == j) {
                 if(mat[i][j] != 1) return 0;
+            }
             else
                 if(mat[i][j] != 0) return 0; 
         }
