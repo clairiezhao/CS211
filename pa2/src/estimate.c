@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 int mat_inv(double **mat, int n, double **matinv);
 int is_identity(double **mat, int n);
@@ -10,17 +11,18 @@ int main(int argc, char **argv) {
 
     //scan argv[1], train: matrix houses x attributes + 1, matrix prices houses x 1
     FILE *training_file = fopen(argv[1], "r");
-    int ret = fscanf(training_file, "%*s");
-    if(ret != 1) return EXIT_FAILURE;
+    char test[50];
+    int ret = fscanf(training_file, "%s", test);
+    if(ret != 1 || strcmp(test, "train") != 0) return EXIT_FAILURE;
 
     //scan num houses (rows) and attributes (cols-1)
     int rows = 0, cols = 0;
-    ret = fscanf(training_file, "%d", &rows);
-    if(ret != 1) return EXIT_FAILURE;
     ret = fscanf(training_file, "%d", &cols);
     if(ret != 1) return EXIT_FAILURE;
+    ret = fscanf(training_file, "%d", &rows);
+    if(ret != 1) return EXIT_FAILURE;
     cols += 1;
-
+    
     //1. houses matrix (houses) x (attr+1)
     double **houses_mat = (double**)malloc(rows * sizeof(double*));
     houses_mat[0] = (double*)malloc(rows * cols * sizeof(double));
@@ -34,12 +36,12 @@ int main(int argc, char **argv) {
     //utility matrices
     //4. houses matrix transpose (attr+1) x (houses)
     double **houses_mat_trans = (double**)malloc(cols * sizeof(double*));
-    houses_mat_trans[0] = (double*)malloc(rows * cols * sizeof(double));
+    houses_mat_trans[0] = (double*)calloc(rows * cols, sizeof(double));
     //5. square matrix product (attr+1) x (attr+1)
     double **sq_mat_prod = (double**)malloc(cols * sizeof(double*));
     sq_mat_prod[0] = (double*)malloc(cols * cols * sizeof(double));
     //6. rect matrix product (houses) x (attr+1)
-    double **rect_mat_prod = (double**)malloc(rows * sizeof(double*));
+    double **rect_mat_prod = (double**)malloc(cols * sizeof(double*));
     rect_mat_prod[0] = (double*)malloc(rows * cols * sizeof(double));
     //7. square matrix inverse (attr+1) x (attr+1)
     double **sq_mat_inv = (double**)malloc(cols * sizeof(double*));
@@ -48,9 +50,10 @@ int main(int argc, char **argv) {
     //set row indices for matrices with num rows = cols
     for(int i = 0; i < cols; i++) {
         weights[i] = &weights[0][i];
-        houses_mat_trans[i] = &houses_mat_trans[0][i * cols];
+        houses_mat_trans[i] = &houses_mat_trans[0][i * rows];
         sq_mat_prod[i] = &sq_mat_prod[0][i * cols];
         sq_mat_inv[i] = &sq_mat_inv[0][i * cols];
+        rect_mat_prod[i] = &rect_mat_prod[0][i * rows];
     }
 
     for(int i = 0; i < rows; i++) {
@@ -59,9 +62,10 @@ int main(int argc, char **argv) {
         houses_mat[i][0] = 1;
         prices[i] = &prices[0][i];
         
-        for(int j = 1; j < (cols-1); j++) {
+        for(int j = 1; j < cols; j++) {
             ret = fscanf(training_file, "%lf", &houses_mat[i][j]);
             if(ret != 1) return EXIT_FAILURE;
+            //printf("i: %d, j: %d\n", i, j);
         }
 
         ret = fscanf(training_file, "%lf", &prices[i][0]);
@@ -73,22 +77,26 @@ int main(int argc, char **argv) {
     mat_mult(houses_mat_trans, cols, rows, houses_mat, rows, cols, sq_mat_prod);
     int success = mat_inv(sq_mat_prod, cols, sq_mat_inv);
     printf("successfully inverted: %d\n", success);
+    if(success != 1) return EXIT_FAILURE;
     mat_mult(sq_mat_inv, cols, cols, houses_mat_trans, cols, rows, rect_mat_prod);
     mat_mult(rect_mat_prod, cols, rows, prices, rows, 1, weights);
 
+    fclose(training_file);
 
     //scan argv[2], data file
     FILE *data_file = fopen(argv[2], "r");
-    ret = fscanf(data_file, "%*s");
-    if(ret != 1) return EXIT_FAILURE;
-
+    ret = fscanf(data_file, "%s", test);
+    if(ret != 1 || strcmp(test, "data") != 0) return EXIT_FAILURE;
+    
     int d_rows = 0, d_cols = 0;
     ret = fscanf(training_file, "%d", &d_cols);
+    d_cols++;
     //num attributes should match in both files
     if(ret != 1 || d_cols != cols) return EXIT_FAILURE;
     ret = fscanf(training_file, "%d", &d_rows);
     if(ret != 1) return EXIT_FAILURE;
 
+    
     //data matrix (houses) x (attr + 1)
     double **data_mat = (double**)malloc(d_rows * sizeof(double*));
     data_mat[0] = (double*)malloc(d_rows * d_cols * sizeof(double));
@@ -147,10 +155,13 @@ int mat_inv(double **mat, int n, double **matinv) {
     }
 
     //Gaussian elimination
-    int pivot, under;
+    //convert mat to upper triangular matrix
+    double pivot, scalar;
+
     for(int i = 0; i < n; i++) {
         //set pivot elem = 1; divide pivot row by pivot element
         pivot = mat[i][i];
+        printf("pivot: %0.1lf\n", pivot);
         if(pivot == 0) continue;
         for(int j = 0; j < n; j++) {
             mat[i][j] /= pivot;
@@ -159,15 +170,29 @@ int mat_inv(double **mat, int n, double **matinv) {
 
         //get all 0s under pivot elem
         for(int j = (i+1); j < n; j++) {
-            under = mat[j][i];
+            scalar = mat[j][i];
             for(int k = 0; k < n; k++) {
-                mat[j][k] -= under * mat[i][k];
-                matinv[j][k] -= under * matinv[i][k];
+                mat[j][k] -= scalar * mat[i][k];
+                matinv[j][k] -= scalar * matinv[i][k];
+            }
+        }
+    }
+
+    //back elimination
+    //starting from the last row
+    for(int i = (n-1); i >= 0; i--) {
+        //starting from one row above i
+        for(int j = (i-1); j >= 0; j--) {
+            scalar = mat[j][i];
+            for(int k = 0; k < n; k++) {
+                mat[j][k] -= scalar * mat[i][k];
+                matinv[j][k] -= scalar * matinv[i][k];
             }
         }
     }
 
     return is_identity(mat, n);
+    //return 0;
 }
 
 int is_identity(double **mat, int n) {
@@ -177,7 +202,9 @@ int is_identity(double **mat, int n) {
                 if(mat[i][j] != 1) return 0;
             }
             else
-                if(mat[i][j] != 0) return 0; 
+                if(mat[i][j] != 0) return 0;
+            
+            //printf("i: %d, j: %d, elem: %0.1lf\n", i, j, mat[i][j]);
         }
     }
     return 1;
@@ -188,6 +215,7 @@ void mat_trans(double **mat, int rows, int cols, double **mattrans) {
     for(int i = 0; i < rows; i++) {
         for(int j = 0; j < cols; j++) {
             mattrans[j][i] = mat[i][j];
+            //printf("i: %d, j: %d, elem: %0.1lf\n", i, j, mattrans[j][i]);
         }
     }
 }
@@ -200,7 +228,7 @@ void mat_mult (double **mat1, int mat1_r, int mat1_c, double **mat2, int mat2_r,
     for(int i = 0; i < mat1_r; i++) {
         for(int j = 0; j < mat2_c; j++) {
             dotprod = 0;
-            for(int k = 0; k < mat1_r; k++)
+            for(int k = 0; k < mat1_c; k++)
                 dotprod += mat1[i][k] * mat2[k][j];
             matprod[i][j] = dotprod;
         }
