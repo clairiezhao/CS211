@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
     mat_trans(houses_mat, rows, cols, houses_mat_trans);
     mat_mult(houses_mat_trans, cols, rows, houses_mat, rows, cols, sq_mat_prod);
     int success = mat_inv(sq_mat_prod, cols, sq_mat_inv);
-    printf("successfully inverted: %d\n", success);
+    //printf("successfully inverted: %d\n", success);
     if(success != 1) return EXIT_FAILURE;
     mat_mult(sq_mat_inv, cols, cols, houses_mat_trans, cols, rows, rect_mat_prod);
     mat_mult(rect_mat_prod, cols, rows, prices, rows, 1, weights);
@@ -89,11 +89,11 @@ int main(int argc, char **argv) {
     if(ret != 1 || strcmp(test, "data") != 0) return EXIT_FAILURE;
     
     int d_rows = 0, d_cols = 0;
-    ret = fscanf(training_file, "%d", &d_cols);
+    ret = fscanf(data_file, "%d", &d_cols);
     d_cols++;
     //num attributes should match in both files
     if(ret != 1 || d_cols != cols) return EXIT_FAILURE;
-    ret = fscanf(training_file, "%d", &d_rows);
+    ret = fscanf(data_file, "%d", &d_rows);
     if(ret != 1) return EXIT_FAILURE;
 
     
@@ -141,6 +141,8 @@ int main(int argc, char **argv) {
     free(data_mat);
     free(est_prices[0]);
     free(est_prices);
+
+    return 0;
 }
 
 int mat_inv(double **mat, int n, double **matinv) {
@@ -161,7 +163,7 @@ int mat_inv(double **mat, int n, double **matinv) {
     for(int i = 0; i < n; i++) {
         //set pivot elem = 1; divide pivot row by pivot element
         pivot = mat[i][i];
-        printf("pivot: %0.1lf\n", pivot);
+        //printf("pivot: %0.1lf\n", pivot);
         if(pivot == 0) continue;
         for(int j = 0; j < n; j++) {
             mat[i][j] /= pivot;
