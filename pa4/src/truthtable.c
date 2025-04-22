@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
             ret = fscanf(input, "%d", &(new_gate->n));
             if(ret != 1)
                 return EXIT_FAILURE;
-            scan_var(input, new_gate->n, new_gate->n, new_gate);
+            scan_var(input, new_gate->n, (1 << new_gate->n), new_gate);
         }
         else if(strcmp(buffer, "MULTIPLEXER") == 0) {
             new_gate->op = 8;
@@ -193,15 +193,13 @@ int main(int argc, char **argv) {
         //scan next var
         ret = fscanf(input, "%17s", buffer);
     }
-    //print_gates_list();
-    //printf("inputs: %s, %s; output: %s\n", gate_list->inputs->var->name, gate_list->inputs->next->var->name, gate_list->outputs->var->name);
 
     for(int i = 0; i < (1 << num_inputs); i++) {
         //run through gates linked list
         var *input_var = var_list;
         int mask;
         //set val for all input var
-        for(int j = 0; j < num_inputs; j++) {
+        for(int j = (num_inputs - 1); j >= 0; j--) {
             //create bit mask
             mask = 1 << j;
             input_var->val = (i & mask) >> j;
@@ -234,6 +232,7 @@ int main(int argc, char **argv) {
                     decoder(ptr);
                     break;
                 case 8: //MULTIPLEXER
+                    //printf(" mux");
                     multiplexer(ptr);
                     break;
                 case 9: //PASS
@@ -286,12 +285,13 @@ int main(int argc, char **argv) {
 }
 
 void decoder(gate *decoder) {
-    unsigned int s;
+    unsigned int s = 0;
     var_ptr *ptr = decoder->inputs;
-    for(int i = decoder->n; i > 0; i--) {
+    for(int i = (decoder->n) - 1; i >= 0; i--) {
         s += ((ptr->var->val) << i);
         ptr = ptr->next;
     }
+    //printf("s: %d\n", s);
     ptr = decoder->outputs;
     while(ptr != NULL) {
         if(ptr->num == s)
@@ -303,9 +303,9 @@ void decoder(gate *decoder) {
 }
 
 void multiplexer(gate *mux) {
-    unsigned int s;
+    unsigned int s = 0;
     var_ptr *ptr = mux->inputs;
-    for(int i = (mux->n << 1); i > 0; i--) {
+    for(int i = (1 << mux->n); i > 0; i--) {
         ptr = ptr->next;
     }
     for(int i = (mux->n) - 1; i >= 0; i--) {
@@ -313,7 +313,7 @@ void multiplexer(gate *mux) {
         ptr = ptr->next;
     }
     ptr = mux->inputs;
-    for(int i = 1; i < s; i++) {
+    for(int i = 1; i <= s; i++) {
         ptr = ptr->next;
     }
     mux->outputs->var->val = ptr->var->val;
