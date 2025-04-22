@@ -34,8 +34,8 @@ gate *gate_list = NULL;
 var* init_var(char *buf);
 var* init_var(char *buf) {
     var *new_var = (var*)malloc(sizeof(var));
-    char *name = (char*)malloc(sizeof(char));
-    strcpy(name, buf);
+    char *name = (char*)malloc(17 * sizeof(char));
+    strncpy(name, buf, 17);
     new_var->name = name;
     new_var->val = -1;
     new_var->next = NULL;
@@ -48,31 +48,6 @@ var* get(char *name, var *list);
 void insert_var(var *new_var, var **list);
 void insert_ptr(var *new_var, var_ptr **list, int num);
 void insert_gate(gate *new_gate, gate **list);
-
-void print_var_list();
-void print_var_list() {
-    var *ptr = var_list;
-    while(ptr != NULL) {
-        printf("%s\n", ptr->name);
-        ptr = ptr->next;
-    }
-}
-void print_varptr_list(var_ptr *list);
-void print_varptr_list(var_ptr *list) {
-    var_ptr *ptr = list;
-    while(ptr != NULL) {
-        printf("%s\n", ptr->var->name);
-        ptr = ptr->next;
-    }
-}
-void print_gates_list();
-void print_gates_list() {
-    gate *ptr = gate_list;
-    while(ptr != NULL) {
-        printf("op: %d\n", ptr->op);
-        ptr = ptr->next;
-    }
-}
 
 int main(int argc, char **argv) {
 
@@ -95,19 +70,19 @@ int main(int argc, char **argv) {
     const_1->val = 1;
 
     //scan inputs
-    ret = fscanf(input, "%17s", buffer);
+    ret = fscanf(input, "%16s", buffer);
     if(ret != 1 || strcmp("INPUT", buffer) != 0) 
         return EXIT_FAILURE;
     ret = fscanf(input, "%d", &num_inputs);
     if(ret != 1 || num_inputs <= 0) 
         return EXIT_FAILURE;
-    ret = fscanf(input, "%17s", buffer);
+    ret = fscanf(input, "%16s", buffer);
     if(ret != 1) 
         return EXIT_FAILURE;
     var_list = init_var(buffer);
     var *ptr = var_list;
     for(int i = 1; i < num_inputs; i++) {
-        ret = fscanf(input, "%17s", buffer);
+        ret = fscanf(input, "%16s", buffer);
         if(ret != 1) 
             return EXIT_FAILURE;
         ptr->next = init_var(buffer);
@@ -123,14 +98,14 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     //ptr is the last var (last input var) in the list
     for(int i = 0; i < num_outputs; i++) {
-        ret = fscanf(input, "%17s", buffer);
+        ret = fscanf(input, "%16s", buffer);
         if(ret != 1) 
             return EXIT_FAILURE;
         ptr->next = init_var(buffer);
         ptr = ptr->next;
     }
     
-    ret = fscanf(input, "%17s", buffer);
+    ret = fscanf(input, "%16s", buffer);
     if(ret != 1)
         return EXIT_FAILURE;
     while(ret != EOF) {
@@ -148,7 +123,6 @@ int main(int argc, char **argv) {
             if(new_gate->inputs == NULL) {
                 printf("NULL\n");
             }
-            //print_varptr_list(new_gate->inputs);
         }
         else if(strcmp(buffer, "OR") == 0) {
             new_gate->op = 3;
@@ -178,7 +152,7 @@ int main(int argc, char **argv) {
             ret = fscanf(input, "%d", &(new_gate->n));
             if(ret != 1)
                 return EXIT_FAILURE;
-            scan_var(input, ((new_gate->n) << 1) + new_gate->n, 1, new_gate);
+            scan_var(input, (1 << (new_gate->n)) + new_gate->n, 1, new_gate);
         }
         else if(strcmp(buffer, "PASS") == 0) {
             new_gate->op = 9;
@@ -191,7 +165,7 @@ int main(int argc, char **argv) {
         insert_gate(new_gate, &(gate_list));
 
         //scan next var
-        ret = fscanf(input, "%17s", buffer);
+        ret = fscanf(input, "%16s", buffer);
     }
 
     for(int i = 0; i < (1 << num_inputs); i++) {
@@ -325,7 +299,7 @@ void scan_var(FILE *file, int num_i, int num_o, gate *gate) {
     char buffer[17];
     var *new_var;
     for(int i = 0; i < num_i; i++) {
-        ret = fscanf(file, "%17s", buffer);
+        ret = fscanf(file, "%16s", buffer);
         if(ret != 1)
             exit(EXIT_FAILURE);
         //check if input is 0 or 1
@@ -344,7 +318,7 @@ void scan_var(FILE *file, int num_i, int num_o, gate *gate) {
         } 
     }
     for(int i = 0; i < num_o; i++) {
-        ret = fscanf(file, "%17s", buffer);
+        ret = fscanf(file, "%16s", buffer);
         if(ret != 1)
             exit(EXIT_FAILURE);
         if(strcmp(buffer, "_") == 0) {
